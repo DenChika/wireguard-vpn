@@ -1,0 +1,72 @@
+version: "3.8"
+services:
+  server-1:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wg-server-1
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+    volumes:
+      - ./configs/server1.conf:/config/wg0.conf
+      - /lib/modules:/lib/modules
+    networks:
+      wg-net:
+        ipv4_address: 172.28.0.2
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+  server-2:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wg-server-2
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+    volumes:
+      - ./configs/server2.conf:/config/wg0.conf
+      - /lib/modules:/lib/modules
+    networks:
+      wg-net:
+        ipv4_address: 172.28.0.3
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+  client:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wg-client
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+    volumes:
+      - ./configs/client1.conf:/config/wg_confs/wg0.conf
+      - ./configs/client2.conf:/config/wg_confs/wg1.conf
+      - /lib/modules:/lib/modules
+    networks:
+      wg-net:
+        ipv4_address: 172.28.0.4
+    depends_on:
+      - server-1
+      - server-2
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+networks:
+  wg-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
